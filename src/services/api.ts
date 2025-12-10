@@ -1,6 +1,27 @@
 // API service layer with session-based isolation
 const API_BASE = '/api'
 
+// Timeout wrapper to prevent infinite loading on slow cold starts
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 15000): Promise<Response> {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal,
+        })
+        clearTimeout(timeout)
+        return response
+    } catch (error) {
+        clearTimeout(timeout)
+        if (error instanceof Error && error.name === 'AbortError') {
+            throw new Error('Request timed out - please try again')
+        }
+        throw error
+    }
+}
+
 // Session handling - each user gets their own sandbox
 
 function getSessionId(): string {
@@ -77,7 +98,7 @@ export async function fetchAssets(status?: string, user?: string): Promise<Asset
     if (user) params.set('user', user)
 
     const query = params.toString()
-    const res = await fetch(`${API_BASE}/assets${query ? `?${query}` : ''}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/assets${query ? `?${query}` : ''}`, {
         headers: getHeaders(),
     })
     if (!res.ok) throw new Error('Failed to fetch assets')
@@ -85,7 +106,7 @@ export async function fetchAssets(status?: string, user?: string): Promise<Asset
 }
 
 export async function createAsset(asset: AssetInput): Promise<Asset> {
-    const res = await fetch(`${API_BASE}/assets`, {
+    const res = await fetchWithTimeout(`${API_BASE}/assets`, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(asset),
@@ -95,7 +116,7 @@ export async function createAsset(asset: AssetInput): Promise<Asset> {
 }
 
 export async function deleteAsset(id: number): Promise<void> {
-    const res = await fetch(`${API_BASE}/assets/${id}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/assets/${id}`, {
         method: 'DELETE',
         headers: getHeaders(),
     })
@@ -108,7 +129,7 @@ export async function fetchRequests(status?: string, user?: string): Promise<Req
     if (user) params.set('user', user)
 
     const query = params.toString()
-    const res = await fetch(`${API_BASE}/requests${query ? `?${query}` : ''}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/requests${query ? `?${query}` : ''}`, {
         headers: getHeaders(),
     })
     if (!res.ok) throw new Error('Failed to fetch requests')
@@ -116,7 +137,7 @@ export async function fetchRequests(status?: string, user?: string): Promise<Req
 }
 
 export async function createRequest(request: RequestInput): Promise<Request> {
-    const res = await fetch(`${API_BASE}/requests`, {
+    const res = await fetchWithTimeout(`${API_BASE}/requests`, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(request),
@@ -126,7 +147,7 @@ export async function createRequest(request: RequestInput): Promise<Request> {
 }
 
 export async function updateRequestStatus(id: number, status: string): Promise<Request> {
-    const res = await fetch(`${API_BASE}/requests/${id}`, {
+    const res = await fetchWithTimeout(`${API_BASE}/requests/${id}`, {
         method: 'PATCH',
         headers: getHeaders(),
         body: JSON.stringify({ status }),
@@ -136,7 +157,7 @@ export async function updateRequestStatus(id: number, status: string): Promise<R
 }
 
 export async function fetchStats(): Promise<Stats> {
-    const res = await fetch(`${API_BASE}/stats`, {
+    const res = await fetchWithTimeout(`${API_BASE}/stats`, {
         headers: getHeaders(),
     })
     if (!res.ok) throw new Error('Failed to fetch stats')

@@ -17,33 +17,58 @@ export default function Dashboard() {
     const [userAssets, setUserAssets] = useState<Asset[]>([])
     const [recentRequests, setRecentRequests] = useState<Request[]>([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    // Fetch data function (can be called to retry)
+    async function loadData() {
+        setLoading(true)
+        setError(null)
+        try {
+            const [statsData, assetsData, requestsData] = await Promise.all([
+                fetchStats(),
+                fetchAssets(undefined, isAdmin ? undefined : 'Sam Rivera'),
+                fetchRequests()
+            ])
+            setStats(statsData)
+            setUserAssets(assetsData)
+            setRecentRequests(requestsData.slice(0, 4))
+        } catch (err) {
+            console.error('Failed to load dashboard data:', err)
+            setError(err instanceof Error ? err.message : 'Failed to load data')
+        } finally {
+            setLoading(false)
+        }
+    }
 
     // Fetch data on mount
     useEffect(() => {
-        async function loadData() {
-            try {
-                const [statsData, assetsData, requestsData] = await Promise.all([
-                    fetchStats(),
-                    fetchAssets(undefined, isAdmin ? undefined : 'Sam Rivera'),
-                    fetchRequests()
-                ])
-                setStats(statsData)
-                setUserAssets(assetsData)
-                setRecentRequests(requestsData.slice(0, 4))
-            } catch (err) {
-                console.error('Failed to load dashboard data:', err)
-            } finally {
-                setLoading(false)
-            }
-        }
         loadData()
     }, [isAdmin])
 
     // Loading state
-    if (loading || !stats) {
+    if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
+            <div className="flex flex-col items-center justify-center h-64 gap-4">
                 <Loader2 className="w-8 h-8 text-navy-400 animate-spin" />
+                <p className="text-gray-400 text-sm">Loading dashboard...</p>
+            </div>
+        )
+    }
+
+    // Error state with retry button
+    if (error || !stats) {
+        return (
+            <div className="flex flex-col items-center justify-center h-64 gap-4">
+                <AlertTriangle className="w-12 h-12 text-amber-400" />
+                <p className="text-white font-medium">Unable to load dashboard</p>
+                <p className="text-gray-400 text-sm">{error || 'Please try again'}</p>
+                <button
+                    onClick={loadData}
+                    className="btn-primary flex items-center gap-2"
+                >
+                    <RefreshCw className="w-4 h-4" />
+                    Retry
+                </button>
             </div>
         )
     }
