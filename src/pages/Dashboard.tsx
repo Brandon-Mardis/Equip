@@ -38,10 +38,10 @@ export default function Dashboard() {
             console.error('Failed to load dashboard data:', err)
             const errorMsg = err instanceof Error ? err.message : 'Failed to load data'
 
-            // Auto-retry up to 2 times on timeout (handles cold starts)
-            if (retryCount < 2 && errorMsg.includes('timed out')) {
+            // Auto-retry up to 2 times on ANY error (handles cold starts)
+            if (retryCount < 2) {
                 setRetryCount(prev => prev + 1)
-                setTimeout(() => loadData(), 1000)
+                setTimeout(() => loadData(), 1500) // Wait 1.5s before retry
                 return
             }
 
