@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Clean gradient for rings -->
+    <linearGradient id="ringGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7BA3E0"/>
+      <stop offset="100%" stop-color="#2E61AA"/>
+    </linearGradient>
+    
+    <!-- Center glow -->
+    <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#7BA3E0"/>
+      <stop offset="70%" stop-color="#4A7DC4"/>
+      <stop offset="100%" stop-color="#2E61AA"/>
+    </radialGradient>
+  </defs>
+  
+  <!-- Rounded square background -->
+  <rect x="16" y="16" width="480" height="480" rx="96" ry="96" fill="#0a0a0f"/>
+  
+  <!-- Contained design within a hexagon-like shape -->
+  <g transform="translate(256, 256)">
+    
+    <!-- Outer ring - full circle -->
+    <circle 
+      cx="0" cy="0" r="150"
+      fill="none" 
+      stroke="url(#ringGrad)" 
+      stroke-width="20"
+      opacity="0.35"
+    />
+    
+    <!-- Middle ring -->
+    <circle 
+      cx="0" cy="0" r="105"
+      fill="none" 
+      stroke="url(#ringGrad)" 
+      stroke-width="20"
+      opacity="0.6"
+    />
+    
+    <!-- Inner ring -->
+    <circle 
+      cx="0" cy="0" r="60"
+      fill="none" 
+      stroke="url(#ringGrad)" 
+      stroke-width="20"
+      opacity="0.85"
+    />
+    
+    <!-- Center filled circle -->
+    <circle 
+      cx="0" cy="0" r="28"
+      fill="url(#centerGlow)"
+    />
+    
+  </g>
+</svg>

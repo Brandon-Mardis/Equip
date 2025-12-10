@@ -1,0 +1,227 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark mode body (default) */
+html.dark body {
+    @apply bg-amoled text-white;
+}
+
+/* Light mode body */
+html.light body {
+    @apply bg-slate-100 text-gray-900;
+}
+
+/* Custom scrollbar - matching portfolio style */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #2855a0;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #2e61aa;
+}
+
+/* Custom utilities */
+@layer utilities {
+    .glass {
+        background: rgba(18, 18, 24, 0.8);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(46, 97, 170, 0.2);
+    }
+
+    html.light .glass {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(46, 97, 170, 0.15);
+    }
+
+    /* Cards */
+    .card {
+        @apply rounded-xl border transition-all duration-300;
+    }
+
+    html.dark .card {
+        @apply bg-surface-elevated border-navy-800/30;
+    }
+
+    html.dark .card:hover {
+        @apply border-navy-600/50 shadow-lg shadow-navy-500/10;
+    }
+
+    html.light .card {
+        @apply bg-white border-gray-200/80 shadow-sm;
+    }
+
+    html.light .card:hover {
+        @apply border-navy-300/50 shadow-md;
+    }
+
+    /* Primary button */
+    .btn-primary {
+        @apply px-6 py-3 bg-navy-500 hover:bg-navy-600 text-white font-medium rounded-lg transition-all duration-200 shadow-lg shadow-navy-500/25;
+    }
+
+    /* Secondary button */
+    .btn-secondary {
+        @apply px-6 py-3 font-medium rounded-lg border transition-all duration-200;
+    }
+
+    html.dark .btn-secondary {
+        @apply bg-surface-elevated hover:bg-surface-hover text-white border-navy-700/50;
+    }
+
+    html.light .btn-secondary {
+        @apply bg-white hover:bg-gray-50 text-gray-800 border-gray-200;
+    }
+
+    /* Input fields */
+    .input-field {
+        @apply w-full px-4 py-3 rounded-lg focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500/50 transition-all;
+    }
+
+    html.dark .input-field {
+        @apply bg-surface-elevated border border-navy-800/30 text-white placeholder:text-gray-500;
+    }
+
+    html.light .input-field {
+        @apply bg-white border border-gray-200 text-gray-800 placeholder:text-gray-400;
+    }
+
+    /* Sidebar */
+    .sidebar {
+        @apply border-r transition-colors duration-300;
+    }
+
+    html.dark .sidebar {
+        @apply bg-surface border-navy-800/30;
+    }
+
+    html.light .sidebar {
+        @apply bg-white border-gray-200;
+    }
+
+    /* Text helpers for theme */
+    .text-heading {
+        @apply transition-colors;
+    }
+
+    html.dark .text-heading {
+        @apply text-white;
+    }
+
+    html.light .text-heading {
+        @apply text-gray-900;
+    }
+
+    .text-body {
+        @apply transition-colors;
+    }
+
+    html.dark .text-body {
+        @apply text-gray-300;
+    }
+
+    html.light .text-body {
+        @apply text-gray-600;
+    }
+
+    .text-muted {
+        @apply transition-colors;
+    }
+
+    html.dark .text-muted {
+        @apply text-gray-400;
+    }
+
+    html.light .text-muted {
+        @apply text-gray-500;
+    }
+
+    /* Surface for nested elements */
+    .bg-surface-auto {
+        @apply transition-colors;
+    }
+
+    html.dark .bg-surface-auto {
+        @apply bg-surface;
+    }
+
+    html.light .bg-surface-auto {
+        @apply bg-slate-50;
+    }
+}
+
+/* Status badge colors - Dark mode - Subtle backgrounds with muted text */
+html.dark .status-available {
+    @apply bg-surface-elevated border border-navy-800/30;
+    color: #6ee7b7;
+    /* muted teal-green */
+}
+
+html.dark .status-assigned {
+    @apply bg-surface-elevated border border-navy-800/30;
+    color: #93c5fd;
+    /* muted sky blue */
+}
+
+html.dark .status-maintenance {
+    @apply bg-surface-elevated border border-navy-800/30;
+    color: #fcd34d;
+    /* muted amber */
+}
+
+html.dark .status-broken {
+    @apply bg-surface-elevated border border-navy-800/30;
+    color: #fca5a5;
+    /* muted rose */
+}
+
+/* Status badge colors - Light mode */
+html.light .status-available {
+    @apply bg-gray-100 border border-gray-200;
+    color: #059669;
+    /* emerald-600 */
+}
+
+html.light .status-assigned {
+    @apply bg-gray-100 border border-gray-200;
+    color: #2563eb;
+    /* blue-600 */
+}
+
+html.light .status-maintenance {
+    @apply bg-gray-100 border border-gray-200;
+    color: #d97706;
+    /* amber-600 */
+}
+
+html.light .status-broken {
+    @apply bg-gray-100 border border-gray-200;
+    color: #dc2626;
+    /* red-600 */
+}
