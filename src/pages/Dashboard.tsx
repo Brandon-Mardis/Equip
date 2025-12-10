@@ -18,6 +18,7 @@ export default function Dashboard() {
     const [recentRequests, setRecentRequests] = useState<Request[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [retryCount, setRetryCount] = useState(0)
 
     // Fetch data function (can be called to retry)
     async function loadData() {
@@ -32,9 +33,19 @@ export default function Dashboard() {
             setStats(statsData)
             setUserAssets(assetsData)
             setRecentRequests(requestsData.slice(0, 4))
+            setRetryCount(0) // Reset on success
         } catch (err) {
             console.error('Failed to load dashboard data:', err)
-            setError(err instanceof Error ? err.message : 'Failed to load data')
+            const errorMsg = err instanceof Error ? err.message : 'Failed to load data'
+
+            // Auto-retry up to 2 times on timeout (handles cold starts)
+            if (retryCount < 2 && errorMsg.includes('timed out')) {
+                setRetryCount(prev => prev + 1)
+                setTimeout(() => loadData(), 1000)
+                return
+            }
+
+            setError(errorMsg)
         } finally {
             setLoading(false)
         }
@@ -50,10 +61,13 @@ export default function Dashboard() {
         return (
             <div className="flex flex-col items-center justify-center h-64 gap-4">
                 <Loader2 className="w-8 h-8 text-navy-400 animate-spin" />
-                <p className="text-gray-400 text-sm">Loading dashboard...</p>
+                <p className="text-gray-400 text-sm">
+                    {retryCount > 0 ? 'Connecting to database...' : 'Loading dashboard...'}
+                </p>
             </div>
         )
     }
+
 
     // Error state with retry button
     if (error || !stats) {
@@ -63,7 +77,7 @@ export default function Dashboard() {
                 <p className="text-white font-medium">Unable to load dashboard</p>
                 <p className="text-gray-400 text-sm">{error || 'Please try again'}</p>
                 <button
-                    onClick={loadData}
+                    onClick={() => loadData()}
                     className="btn-primary flex items-center gap-2"
                 >
                     <RefreshCw className="w-4 h-4" />
