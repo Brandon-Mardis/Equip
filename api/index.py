@@ -42,13 +42,14 @@ SEED_ASSETS = [
     ("EQ-MON-042", "Dell UltraSharp 27\"", "Monitor", "Assigned", "HQ", "Sam Rivera", "2024-02-10"),
     ("EQ-MON-043", "LG 4K Monitor", "Monitor", "Maintenance", "New York", None, "2023-11-05"),
     ("EQ-DOC-018", "Dell WD19 Dock", "Docking Station", "Assigned", "HQ", "Sam Rivera", "2024-03-15"),
-    ("EQ-LAP-003", "ThinkPad X1 Carbon", "Laptop", "Broken", "Remote", "Jordan Lee", "2023-08-22"),
+    ("EQ-LAP-003", "ThinkPad X1 Carbon", "Laptop", "Assigned", "Remote", "Jordan Lee", "2023-08-22"),
     ("EQ-PER-089", "Logitech MX Master 3", "Peripheral", "Assigned", "HQ", "Sam Rivera", "2024-03-15"),
     ("EQ-MON-044", "Samsung 32\" Curved", "Monitor", "Available", "New York", None, "2024-04-01"),
     ("EQ-LAP-004", "HP EliteBook 840", "Laptop", "Assigned", "New York", "Alex Chen", "2024-02-28"),
     ("EQ-LAP-005", "Dell Latitude 5520", "Laptop", "Available", "HQ", None, "2024-05-10"),
     ("EQ-DOC-019", "Lenovo USB-C Dock", "Docking Station", "Available", "HQ", None, "2024-06-01"),
     ("EQ-PER-090", "Logitech MX Keys", "Peripheral", "Assigned", "HQ", "Alex Chen", "2024-02-28"),
+    ("EQ-MON-045", "Acer 24\" Gaming", "Monitor", "Broken", "HQ", None, "2023-06-15"),
 ]
 
 SEED_REQUESTS = [
@@ -73,7 +74,7 @@ def create_seed_data():
             "id": i, "type": r[0], "asset": r[1], "description": r[2],
             "priority": r[3], "status": r[4], "user": r[5], "createdAt": r[6]
         })
-    return {"assets": assets, "requests": requests, "next_asset_id": 13, "next_request_id": 6}
+    return {"assets": assets, "requests": requests, "next_asset_id": 14, "next_request_id": 6}
 
 # In-memory session storage
 memory_sessions = defaultdict(create_seed_data)
@@ -279,6 +280,73 @@ def delete_asset(asset_id: int, x_session_id: str = Header(...)):
             if a["id"] == asset_id:
                 session["assets"].pop(i)
                 return {"message": "Asset deleted"}
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+
+class AssetUpdate(BaseModel):
+    name: Optional[str] = None
+    category: Optional[str] = None
+    site: Optional[str] = None
+    status: Optional[str] = None
+    assignedTo: Optional[str] = None
+
+
+@app.put("/api/assets/{asset_id}")
+def update_asset(asset_id: int, updates: AssetUpdate, x_session_id: str = Header(...)):
+    if USE_DATABASE:
+        ensure_session_db(x_session_id)
+        with get_db() as conn:
+            with conn.cursor() as cur:
+                # Build dynamic update query
+                fields = []
+                values = []
+                if updates.name is not None:
+                    fields.append("name = %s")
+                    values.append(updates.name)
+                if updates.category is not None:
+                    fields.append("category = %s")
+                    values.append(updates.category)
+                if updates.site is not None:
+                    fields.append("site = %s")
+                    values.append(updates.site)
+                if updates.status is not None:
+                    fields.append("status = %s")
+                    values.append(updates.status)
+                if updates.assignedTo is not None:
+                    fields.append("assigned_to = %s")
+                    # Empty string means Unassigned - store as NULL
+                    values.append(updates.assignedTo if updates.assignedTo else None)
+                
+                if not fields:
+                    raise HTTPException(status_code=400, detail="No fields to update")
+                
+                values.extend([asset_id, x_session_id])
+                cur.execute(f"""
+                    UPDATE assets SET {', '.join(fields)}
+                    WHERE id = %s AND session_id = %s
+                    RETURNING id, tag, name, category, status, site, assigned_to, purchase_date
+                """, values)
+                r = cur.fetchone()
+                if not r:
+                    raise HTTPException(status_code=404, detail="Asset not found")
+        return {"id": r[0], "tag": r[1], "name": r[2], "category": r[3], "status": r[4],
+                "site": r[5], "assignedTo": r[6], "purchaseDate": str(r[7]) if r[7] else None}
+    else:
+        session = memory_sessions[x_session_id]
+        for asset in session["assets"]:
+            if asset["id"] == asset_id:
+                if updates.name is not None:
+                    asset["name"] = updates.name
+                if updates.category is not None:
+                    asset["category"] = updates.category
+                if updates.site is not None:
+                    asset["site"] = updates.site
+                if updates.status is not None:
+                    asset["status"] = updates.status
+                if updates.assignedTo is not None:
+                    # Empty string means Unassigned - store as None
+                    asset["assignedTo"] = updates.assignedTo if updates.assignedTo else None
+                return asset
         raise HTTPException(status_code=404, detail="Asset not found")
 
 

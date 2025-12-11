@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { Search, Plus, MoreVertical, MapPin, Package, Loader2, Trash2 } from 'lucide-react'
-import { fetchAssets, createAsset, deleteAsset, type Asset } from '../services/api'
+import { Search, Plus, MoreVertical, MapPin, Package, Loader2, Trash2, Edit3 } from 'lucide-react'
+import { fetchAssets, createAsset, deleteAsset, updateAsset, type Asset } from '../services/api'
 import { categoryIcons, statusColors } from '../data/store'
 
 export default function Assets() {
@@ -20,6 +20,9 @@ export default function Assets() {
     // Delete confirmation state
     const [deleteConfirm, setDeleteConfirm] = useState<Asset | null>(null)
     const [deleting, setDeleting] = useState(false)
+
+    // Edit state
+    const [editingAsset, setEditingAsset] = useState<Asset | null>(null)
 
     // API state
     const [assets, setAssets] = useState<Asset[]>([])
@@ -94,6 +97,28 @@ export default function Assets() {
             console.error('Failed to delete asset:', err)
         } finally {
             setDeleting(false)
+        }
+    }
+
+    // Handle update asset
+    async function handleUpdateAsset() {
+        if (!editingAsset) return
+
+        setSubmitting(true)
+        try {
+            const updated = await updateAsset(editingAsset.id, {
+                name: editingAsset.name,
+                category: editingAsset.category,
+                site: editingAsset.site,
+                status: editingAsset.status,
+                assignedTo: editingAsset.assignedTo || '' // Send empty string for Unassigned
+            })
+            setAssets(prev => prev.map(a => a.id === updated.id ? updated : a))
+            setEditingAsset(null)
+        } catch (err) {
+            console.error('Failed to update asset:', err)
+        } finally {
+            setSubmitting(false)
         }
     }
 
@@ -195,7 +220,11 @@ export default function Assets() {
                             {filteredAssets.map((asset) => {
                                 const IconComponent = categoryIcons[asset.category] || Package
                                 return (
-                                    <tr key={asset.id} className="border-b border-navy-800/20 hover:bg-surface-elevated/50 transition-colors">
+                                    <tr
+                                        key={asset.id}
+                                        className={`border-b border-navy-800/20 hover:bg-surface-elevated/50 transition-colors ${isAdmin ? 'cursor-pointer' : ''}`}
+                                        onClick={() => isAdmin && setEditingAsset(asset)}
+                                    >
                                         <td className="p-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 bg-navy-500/20 rounded-lg flex items-center justify-center">
@@ -226,7 +255,7 @@ export default function Assets() {
                                                 {asset.assignedTo || <span className="text-gray-500">—</span>}
                                             </td>
                                         )}
-                                        <td className="p-4 relative">
+                                        <td className="p-4 relative" onClick={(e) => e.stopPropagation()}>
                                             <div ref={openDropdown === asset.id ? dropdownRef : null}>
                                                 <button
                                                     onClick={() => setOpenDropdown(openDropdown === asset.id ? null : asset.id)}
@@ -235,9 +264,19 @@ export default function Assets() {
                                                     <MoreVertical className="w-5 h-5" />
                                                 </button>
 
-                                                {/* Dropdown Menu - opens upward to avoid overflow */}
+                                                {/* Dropdown Menu - opens to the left to avoid overflow */}
                                                 {openDropdown === asset.id && isAdmin && (
-                                                    <div className="absolute right-0 bottom-full mb-1 w-40 bg-surface-elevated border border-navy-800/30 rounded-lg shadow-lg py-1 z-10">
+                                                    <div className="absolute right-full top-0 mr-2 w-32 bg-surface-elevated border border-navy-800/30 rounded-lg shadow-lg py-1 z-10">
+                                                        <button
+                                                            onClick={() => {
+                                                                setOpenDropdown(null)
+                                                                setEditingAsset(asset)
+                                                            }}
+                                                            className="w-full px-4 py-2 text-left text-sm text-gray-300 hover:bg-navy-500/20 flex items-center gap-2"
+                                                        >
+                                                            <Edit3 className="w-4 h-4" />
+                                                            Edit
+                                                        </button>
                                                         <button
                                                             onClick={() => {
                                                                 setOpenDropdown(null)
@@ -378,6 +417,107 @@ export default function Assets() {
                             >
                                 {deleting && <Loader2 className="w-4 h-4 animate-spin" />}
                                 Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Asset Modal */}
+            {editingAsset && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="card p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+                        <h2 className="text-xl font-bold text-white mb-6">Edit Asset</h2>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-2">Asset Name</label>
+                                <input
+                                    type="text"
+                                    className="input-field"
+                                    value={editingAsset.name}
+                                    onChange={(e) => setEditingAsset(prev => prev ? { ...prev, name: e.target.value } : null)}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-2">Category</label>
+                                <select
+                                    className="input-field"
+                                    value={editingAsset.category}
+                                    onChange={(e) => setEditingAsset(prev => prev ? { ...prev, category: e.target.value } : null)}
+                                >
+                                    <option>Laptop</option>
+                                    <option>Monitor</option>
+                                    <option>Docking Station</option>
+                                    <option>Peripheral</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-2">Site/Location</label>
+                                <select
+                                    className="input-field"
+                                    value={editingAsset.site}
+                                    onChange={(e) => setEditingAsset(prev => prev ? { ...prev, site: e.target.value } : null)}
+                                >
+                                    <option>HQ</option>
+                                    <option>New York</option>
+                                    <option>Remote</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-2">Status</label>
+                                <select
+                                    className="input-field"
+                                    value={editingAsset.status}
+                                    onChange={(e) => setEditingAsset(prev => prev ? { ...prev, status: e.target.value } : null)}
+                                >
+                                    <option>Available</option>
+                                    <option>Assigned</option>
+                                    <option>Maintenance</option>
+                                    <option>Broken</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-2">Assigned To</label>
+                                <select
+                                    className="input-field"
+                                    value={editingAsset.assignedTo || ''}
+                                    onChange={(e) => {
+                                        const newAssignment = e.target.value || null
+                                        // Auto-update status based on assignment
+                                        const newStatus = newAssignment ? 'Assigned' : 'Available'
+                                        setEditingAsset(prev => prev ? { ...prev, assignedTo: newAssignment, status: newStatus } : null)
+                                    }}
+                                >
+                                    <option value="">Unassigned</option>
+                                    <option>Sam Rivera</option>
+                                    <option>Alex Chen</option>
+                                    <option>Jordan Lee</option>
+                                    <option>Taylor Kim</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => setEditingAsset(null)}
+                                className="btn-secondary flex-1"
+                                disabled={submitting}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleUpdateAsset}
+                                className="btn-primary flex-1 flex items-center justify-center gap-2"
+                                disabled={submitting || !editingAsset.name.trim()}
+                            >
+                                {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                                Save Changes
                             </button>
                         </div>
                     </div>

@@ -123,6 +123,24 @@ export async function deleteAsset(id: number): Promise<void> {
     if (!res.ok) throw new Error('Failed to delete asset')
 }
 
+export interface AssetUpdate {
+    name?: string
+    category?: string
+    site?: string
+    status?: string
+    assignedTo?: string | null
+}
+
+export async function updateAsset(id: number, updates: AssetUpdate): Promise<Asset> {
+    const res = await fetchWithTimeout(`${API_BASE}/assets/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(updates),
+    })
+    if (!res.ok) throw new Error('Failed to update asset')
+    return res.json()
+}
+
 export async function fetchRequests(status?: string, user?: string): Promise<Request[]> {
     const params = new URLSearchParams()
     if (status && status !== 'all') params.set('status', status)

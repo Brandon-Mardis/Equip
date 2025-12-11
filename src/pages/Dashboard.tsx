@@ -34,19 +34,21 @@ export default function Dashboard() {
             setUserAssets(assetsData)
             setRecentRequests(requestsData.slice(0, 4))
             setRetryCount(0) // Reset on success
+            setLoading(false)
         } catch (err) {
             console.error('Failed to load dashboard data:', err)
             const errorMsg = err instanceof Error ? err.message : 'Failed to load data'
 
             // Auto-retry up to 2 times on ANY error (handles cold starts)
+            // Keep loading=true during retry so no error flash
             if (retryCount < 2) {
                 setRetryCount(prev => prev + 1)
                 setTimeout(() => loadData(), 1500) // Wait 1.5s before retry
                 return
             }
 
+            // Only show error after all retries exhausted
             setError(errorMsg)
-        } finally {
             setLoading(false)
         }
     }
