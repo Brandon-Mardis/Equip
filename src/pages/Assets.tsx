@@ -202,8 +202,68 @@ export default function Assets() {
                 </select>
             </div>
 
-            {/* Asset Table */}
-            <div className="card overflow-hidden">
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+                {filteredAssets.map((asset) => {
+                    const IconComponent = categoryIcons[asset.category] || Package
+                    return (
+                        <div
+                            key={asset.id}
+                            className={`card p-4 ${isAdmin ? 'cursor-pointer active:bg-surface-elevated/80' : ''}`}
+                            onClick={() => isAdmin && setEditingAsset(asset)}
+                        >
+                            <div className="flex items-start gap-3">
+                                <div className="w-12 h-12 bg-navy-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <IconComponent className="w-6 h-6 text-navy-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <p className="font-medium text-white truncate">{asset.name}</p>
+                                            <p className="text-sm text-gray-400">{asset.tag}</p>
+                                        </div>
+                                        <span className={`text-xs px-2 py-1 rounded-full border font-medium whitespace-nowrap ${statusColors[asset.status]}`}>
+                                            {asset.status}
+                                        </span>
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400">
+                                        <span>{asset.category}</span>
+                                        {isAdmin && (
+                                            <>
+                                                <span className="flex items-center gap-1">
+                                                    <MapPin className="w-3 h-3" />
+                                                    {asset.site}
+                                                </span>
+                                                {asset.assignedTo && (
+                                                    <span className="text-navy-300">{asset.assignedTo}</span>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                })}
+                {filteredAssets.length === 0 && (
+                    <div className="card p-8 text-center">
+                        <Package className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                        <p className="text-gray-400 mb-2">No assets found matching your criteria.</p>
+                        <button
+                            onClick={() => {
+                                setSearchTerm('')
+                                setFilterStatus('all')
+                            }}
+                            className="text-navy-400 hover:text-navy-300 text-sm"
+                        >
+                            Clear filters
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Desktop Table View - hidden on mobile */}
+            <div className="hidden md:block card overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
